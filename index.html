@@ -3,6 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>小豚当家销售经营BI看板 V1.0</title>
 <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
 <style>
@@ -190,9 +193,14 @@ tab5:{sRow:'store',sMetric:'amount',pRow:'store',pMetric:'cost',topN:15}
 
 // ==================== DATA LAYER ====================
 async function loadData(){
-const resp=await fetch('./data.json?t='+Date.now());
+const url='./data.json?t='+Date.now()+'&r='+Math.random().toString(36).slice(2);
+const resp=await fetch(url,{cache:'no-store'});
+if(!resp.ok){throw new Error('HTTP '+resp.status+' 加载 '+url+' 失败')}
 D=await resp.json();
-if(!D||!D.meta||!D.meta.channels){throw new Error('data.json结构异常: '+JSON.stringify(D).substring(0,300))}
+if(!D||!D.meta){throw new Error('data.json缺少meta: '+JSON.stringify(D).substring(0,300))}
+const need=['channels','stores','categories','models','marketingScenes'];
+const miss=need.filter(k=>!Array.isArray(D.meta[k]));
+if(miss.length){throw new Error('meta缺少: '+miss.join(','))}
 }
 function chName(i){return D.meta.channels[i]||'-'}
 function stName(i){return D.meta.stores[i]||'-'}
@@ -408,7 +416,9 @@ initMS('model','型号');
 document.addEventListener('click',()=>{document.querySelectorAll('.ms-panel').forEach(p=>p.classList.remove('show'))});
 }
 function initMS(dim,label){
-const items=D.meta[dim+'s'];
+const key=dim+'s';
+const items=D.meta[key];
+if(!Array.isArray(items)){throw new Error(`initMS('${dim}') 找不到 D.meta.${key}`)}
 const c=document.getElementById('msc-'+dim);
 c.innerHTML=`<button class="ms-btn" onclick="event.stopPropagation();toggleMS('${dim}')"><span>${label}:</span><span class="ms-val" id="msv-${dim}">全部</span><span class="ms-arrow">▾</span></button>
 <div class="ms-panel" id="msp-${dim}">
