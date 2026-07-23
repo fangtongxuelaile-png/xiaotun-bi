@@ -1248,7 +1248,7 @@ renderTab0();
 document.getElementById('loading').classList.add('hidden');
 document.getElementById('app').style.display='block';
 }catch(e){
-document.getElementById('loading').innerHTML=`<div style="color:#FF453A;font-size:14px">数据加载失败: ${e.message}<br><span style="font-size:12px;color:var(--txt3)">请确保通过HTTP服务器访问此页面(如: python3 -m http.server)</span></div>`;
+document.getElementById('loading').innerHTML=`<div style="color:#FF453A;font-size:14px">数据加载失败: ${e.message}<br><span style="font-size:12px;color:var(--txt3)">请确保通过HTTP服务器访问此页面(如: python3 -m http.server)</span><br><pre style="font-size:10px;color:#888;text-align:left;margin-top:8px;white-space:pre-wrap">${e.stack||''}</pre></div>`;
 console.error(e);
 }
 }
