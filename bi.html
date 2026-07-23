@@ -195,7 +195,7 @@ tab5:{sRow:'store',sMetric:'amount',pRow:'store',pMetric:'cost',topN:15}
 // ==================== DATA LAYER ====================
 function loadData(){
 D=window.__DATA__;
-if(!D||!D.meta){throw new Error('内联数据缺少meta: '+JSON.stringify(D).substring(0,300))}
+if(!D||!D.meta){throw new Error('内联数据缺少meta')}
 const need=['channels','stores','categories','models','marketingScenes'];
 const miss=need.filter(k=>!Array.isArray(D.meta[k]));
 if(miss.length){throw new Error('meta缺少: '+miss.join(','))}
@@ -414,7 +414,8 @@ initMS('model','型号');
 document.addEventListener('click',()=>{document.querySelectorAll('.ms-panel').forEach(p=>p.classList.remove('show'))});
 }
 function initMS(dim,label){
-const key=dim+'s';
+const keyMap={channel:'channels',store:'stores',category:'categories',model:'models'};
+const key=keyMap[dim]||dim+'s';
 const items=D.meta[key];
 if(!Array.isArray(items)){throw new Error(`initMS('${dim}') 找不到 D.meta.${key}`)}
 const c=document.getElementById('msc-'+dim);
