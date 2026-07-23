@@ -190,8 +190,9 @@ tab5:{sRow:'store',sMetric:'amount',pRow:'store',pMetric:'cost',topN:15}
 
 // ==================== DATA LAYER ====================
 async function loadData(){
-const resp=await fetch('./data.json');
+const resp=await fetch('./data.json?t='+Date.now());
 D=await resp.json();
+if(!D||!D.meta||!D.meta.channels){throw new Error('data.json结构异常: '+JSON.stringify(D).substring(0,300))}
 }
 function chName(i){return D.meta.channels[i]||'-'}
 function stName(i){return D.meta.stores[i]||'-'}
