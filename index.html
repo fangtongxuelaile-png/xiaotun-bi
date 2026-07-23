@@ -1,0 +1,1259 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>小豚当家销售经营BI看板 V1.0</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0a0a;--bg2:#1a1a2e;--card:#1e1e30;--gold:#D4AF37;--gold-d:rgba(212,175,55,0.15);--gold-b:rgba(212,175,55,0.3);--txt:#f0f0f0;--txt2:rgba(255,255,255,0.6);--txt3:rgba(255,255,255,0.35);--green:#30D158;--red:#FF453A;--blue:#4FC3F7;--border:rgba(255,255,255,0.06)}
+body{background:var(--bg);color:var(--txt);font-family:-apple-system,system-ui,'Segoe UI',sans-serif;font-size:13px;overflow-x:hidden}
+/* Header */
+.app-header{display:flex;align-items:center;gap:12px;padding:10px 20px;background:linear-gradient(135deg,#0d0d1a,#1a1a2e);border-bottom:1px solid var(--gold-b);position:sticky;top:0;z-index:100}
+.logo-icon{width:38px;height:38px;border-radius:8px;background:linear-gradient(135deg,#D4AF37,#B8941F);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:#0a0a0a}
+.app-title{font-size:18px;font-weight:700;color:var(--gold);letter-spacing:1px}
+.app-sub{font-size:11px;color:var(--txt3)}
+/* Filter Bar */
+.filter-bar{display:flex;align-items:center;gap:12px;padding:8px 20px;background:var(--bg2);border-bottom:1px solid var(--border);flex-wrap:wrap;position:sticky;top:59px;z-index:99}
+.filter-group{display:flex;align-items:center;gap:4px}
+.filter-group label{font-size:11px;color:var(--txt2);white-space:nowrap}
+.filter-group input[type=date]{background:var(--card);border:1px solid var(--border);color:var(--txt);padding:4px 8px;border-radius:4px;font-size:12px;color-scheme:dark}
+.btn-apply{background:var(--gold);color:#0a0a0a;border:none;padding:5px 16px;border-radius:4px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}
+.btn-apply:hover{opacity:0.85}
+/* Multi-select */
+.ms-container{position:relative}
+.ms-btn{display:flex;align-items:center;gap:4px;background:var(--card);border:1px solid var(--border);color:var(--txt);padding:4px 10px;border-radius:4px;font-size:12px;cursor:pointer;white-space:nowrap}
+.ms-btn:hover{border-color:var(--gold-b)}
+.ms-val{color:var(--gold);max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ms-arrow{font-size:9px;color:var(--txt3)}
+.ms-panel{position:absolute;top:100%;left:0;margin-top:4px;background:var(--card);border:1px solid var(--gold-b);border-radius:6px;padding:6px;min-width:180px;max-height:280px;overflow-y:auto;z-index:200;display:none;box-shadow:0 8px 24px rgba(0,0,0,0.5)}
+.ms-panel.show{display:block}
+.ms-actions{display:flex;gap:4px;margin-bottom:4px;padding-bottom:4px;border-bottom:1px solid var(--border)}
+.ms-actions button{background:var(--gold-d);border:1px solid var(--border);color:var(--gold);padding:2px 8px;border-radius:3px;font-size:10px;cursor:pointer}
+.ms-item{display:flex;align-items:center;gap:6px;padding:3px 4px;cursor:pointer;font-size:12px;color:var(--txt2)}
+.ms-item:hover{color:var(--txt)}
+.ms-item input{accent-color:var(--gold)}
+/* Tab Bar */
+.tab-bar{display:flex;gap:0;padding:0 20px;background:var(--bg);border-bottom:1px solid var(--border);overflow-x:auto;position:sticky;top:95px;z-index:98}
+.tab-btn{background:none;border:none;color:var(--txt2);padding:10px 18px;font-size:13px;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;transition:all .2s}
+.tab-btn:hover{color:var(--txt)}
+.tab-btn.active{color:var(--gold);border-bottom-color:var(--gold)}
+/* Tab Content */
+.tab-content{padding:16px 20px 40px;min-height:600px}
+.tab-panel{display:none}
+.tab-panel.active{display:block;animation:fade .3s}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+/* KPI */
+.kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:10px}
+.kpi-card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px 14px;transition:border .2s;position:relative;overflow:hidden}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;background:var(--gold)}
+.kpi-card:hover{border-color:var(--gold-b)}
+.kpi-label{font-size:11px;color:var(--txt2);margin-bottom:6px}
+.kpi-value{font-size:22px;font-weight:700;color:#fff;line-height:1.2}
+.kpi-unit{font-size:11px;color:var(--txt2);font-weight:400;margin-left:2px}
+.kpi-compare{display:flex;gap:12px;margin-top:6px;font-size:10px;color:var(--txt3)}
+.kpi-compare span span{font-weight:600}
+.chg-pos{color:var(--green)!important}
+.chg-neg{color:var(--red)!important}
+.chg-na{color:var(--txt3)!important}
+/* Chart Cards */
+.chart-grid{display:grid;gap:12px;margin-top:12px}
+.cg-2{grid-template-columns:1fr 1fr}
+.cg-3{grid-template-columns:1fr 1fr 1fr}
+.cg-1{grid-template-columns:1fr}
+.chart-card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px;overflow:hidden}
+.chart-card-title{font-size:13px;color:var(--gold);font-weight:600;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}
+.chart-card-title .ctrl{display:flex;gap:4px}
+.chart-card-title .ctrl button{background:var(--gold-d);border:1px solid var(--border);color:var(--txt2);padding:2px 8px;border-radius:3px;font-size:10px;cursor:pointer}
+.chart-card-title .ctrl button.active{background:var(--gold);color:#0a0a0a}
+/* Tables */
+.data-table{width:100%;border-collapse:collapse;font-size:12px}
+.data-table th{background:var(--gold-d);color:var(--gold);padding:7px 10px;text-align:left;border-bottom:1px solid var(--gold-b);font-weight:600;white-space:nowrap}
+.data-table td{padding:6px 10px;border-bottom:1px solid var(--border);color:var(--txt)}
+.data-table tr:nth-child(even) td{background:rgba(255,255,255,0.015)}
+.data-table tr:hover td{background:rgba(212,175,55,0.06)}
+.data-table .total-row td{font-weight:700;color:var(--gold);border-top:1px solid var(--gold-b)}
+.data-table .pos{color:var(--green)}
+.data-table .neg{color:var(--red)}
+.table-wrap{overflow-x:auto;max-height:420px;overflow-y:auto}
+.table-wrap::-webkit-scrollbar{width:6px;height:6px}
+.table-wrap::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+/* Section */
+.section{margin-bottom:16px}
+.section-title{font-size:14px;color:var(--gold);font-weight:700;margin-bottom:8px;padding-left:8px;border-left:3px solid var(--gold)}
+/* Loading */
+.loading{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;gap:16px}
+.loading.hidden{display:none}
+.spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* Selectors */
+.sel-row{display:flex;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap}
+.sel-row label{font-size:12px;color:var(--txt2)}
+.sel-row select,.sel-row input{background:var(--card);border:1px solid var(--border);color:var(--txt);padding:4px 8px;border-radius:4px;font-size:12px;color-scheme:dark}
+.sel-row select option{background:var(--card)}
+/* Gauge */
+.gauge-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+/* Progress bar */
+.prog-bar{width:100%;height:8px;background:rgba(255,255,255,0.06);border-radius:4px;overflow:hidden}
+.prog-fill{height:100%;border-radius:4px;transition:width .5s}
+/* Action list */
+.action-item{display:flex;align-items:start;gap:8px;padding:8px 10px;background:var(--card);border-radius:6px;margin-bottom:6px;border-left:3px solid}
+.action-p0{border-left-color:var(--red)}
+.action-p1{border-left-color:var(--gold)}
+.action-p2{border-left-color:var(--blue)}
+.action-tag{font-size:10px;padding:1px 6px;border-radius:3px;font-weight:700;white-space:nowrap}
+.tag-p0{background:rgba(255,69,58,0.2);color:var(--red)}
+.tag-p1{background:var(--gold-d);color:var(--gold)}
+.tag-p2{background:rgba(79,195,247,0.15);color:var(--blue)}
+.action-text{font-size:12px;color:var(--txt2);flex:1}
+/* GAP */
+.gap-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.gap-card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px}
+.gap-card h4{color:var(--gold);font-size:13px;margin-bottom:8px}
+.gap-metric{display:flex;justify-content:space-between;padding:3px 0;font-size:12px}
+.gap-metric span:first-child{color:var(--txt2)}
+.gap-metric span:last-child{font-weight:600}
+/* Responsive */
+@media(max-width:1200px){.kpi-row{grid-template-columns:repeat(3,1fr)}.cg-2,.cg-3,.gauge-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:768px){.kpi-row{grid-template-columns:repeat(2,1fr)}.cg-2,.cg-3,.gauge-grid,.gap-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="loading" id="loading">
+<div class="spinner"></div>
+<div style="color:var(--gold);font-size:14px">正在加载数据...</div>
+</div>
+
+<div id="app" style="display:none">
+<header class="app-header">
+<div class="logo-icon">豚</div>
+<div>
+<div class="app-title">小豚当家销售经营BI看板</div>
+<div class="app-sub">V1.0 · 数据周期: <span id="dataRange"></span></div>
+</div>
+</header>
+
+<div class="filter-bar" id="filterBar"></div>
+
+<nav class="tab-bar" id="tabBar">
+<button class="tab-btn active" onclick="switchTab(0)">经营总览</button>
+<button class="tab-btn" onclick="switchTab(1)">推广分析</button>
+<button class="tab-btn" onclick="switchTab(2)">时间段对比</button>
+<button class="tab-btn" onclick="switchTab(3)">趋势分析</button>
+<button class="tab-btn" onclick="switchTab(4)">智能诊断</button>
+<button class="tab-btn" onclick="switchTab(5)">透视表分析</button>
+<button class="tab-btn" onclick="switchTab(6)">目标达成</button>
+</nav>
+
+<main class="tab-content" id="tabContent">
+<div id="tab0" class="tab-panel active"></div>
+<div id="tab1" class="tab-panel"></div>
+<div id="tab2" class="tab-panel"></div>
+<div id="tab3" class="tab-panel"></div>
+<div id="tab4" class="tab-panel"></div>
+<div id="tab5" class="tab-panel"></div>
+<div id="tab6" class="tab-panel"></div>
+</main>
+</div>
+
+<script>
+// ==================== CONSTANTS ====================
+const COLORS=['#D4AF37','#4FC3F7','#66BB6A','#FF7043','#AB47BC','#26C6DA','#FFA726','#EF5350','#7E57C2','#26A69A','#EC407A','#789262'];
+const SC={date:0,ch:1,st:2,cat:3,mdl:4,vis:5,vw:6,ac:7,aci:8,byr:9,itm:10,amt:11,rfd:12};
+const PC={date:0,ch:1,st:2,cat:3,mdl:4,scn:5,cost:6,imp:7,clk:8,tot:9,dir:10,ind:11,ord:12,cart:13};
+const LAYOUT={
+paper_bgcolor:'transparent',plot_bgcolor:'rgba(255,255,255,0.015)',
+font:{color:'rgba(255,255,255,0.65)',size:10,family:'-apple-system,system-ui,sans-serif'},
+margin:{l:50,r:20,t:10,b:30},
+xaxis:{gridcolor:'rgba(255,255,255,0.04)',zerolinecolor:'rgba(255,255,255,0.08)',linecolor:'rgba(255,255,255,0.1)',tickfont:{size:9}},
+yaxis:{gridcolor:'rgba(255,255,255,0.04)',zerolinecolor:'rgba(255,255,255,0.08)',linecolor:'rgba(255,255,255,0.1)',tickfont:{size:9}},
+legend:{bgcolor:'transparent',orientation:'h',y:-0.22,font:{size:9,color:'rgba(255,255,255,0.6)'}},
+hovermode:'x unified',
+hoverlabel:{bgcolor:'#1e1e30',bordercolor:'#D4AF37',font:{color:'#f0f0f0',size:11}},
+bargap:0.2
+};
+const CONFIG={responsive:true,displayModeBar:false};
+const VALID_IND=new Set(['支付件数目标','成交金额目标','目标费率','目标投入金额','实际推广花费','实际投入金额','实际费率','实际支付件数','推广花费','成交金额达成','目标推广费','实际成交金额','成交金额达成率']);
+
+// ==================== STATE ====================
+let D=null;
+let S={
+filters:{startDate:'',endDate:'',channels:new Set(),stores:new Set(),categories:new Set(),models:new Set()},
+activeTab:0,
+tab0:{gran:'day'},
+tab2:{mode:'mom'},
+tab3:{dim:'date',cmp:'yoy',gran:'day'},
+tab5:{sRow:'store',sMetric:'amount',pRow:'store',pMetric:'cost',topN:15}
+};
+
+// ==================== DATA LAYER ====================
+async function loadData(){
+const resp=await fetch('./data.json');
+D=await resp.json();
+}
+function chName(i){return D.meta.channels[i]||'-'}
+function stName(i){return D.meta.stores[i]||'-'}
+function catName(i){return D.meta.categories[i]||'-'}
+function mdlName(i){return D.meta.models[i]||'-'}
+function scnName(i){return D.meta.marketingScenes[i]||'-'}
+function dimName(dim,i){
+return{channel:chName,store:stName,category:catName,model:mdlName,marketingScene:scnName}[dim](i);
+}
+
+// ==================== FILTERING ====================
+function inRange(d,s,e){return d>=s&&d<=e}
+function inSet(i,set){return!set||set.size===0||set.has(i)}
+function fSales(rows,f){
+return rows.filter(r=>inRange(r[SC.date],f.startDate,f.endDate)&&inSet(r[SC.ch],f.channels)&&inSet(r[SC.st],f.stores)&&inSet(r[SC.cat],f.categories)&&inSet(r[SC.mdl],f.models));
+}
+function fPromo(rows,f){
+return rows.filter(r=>inRange(r[PC.date],f.startDate,f.endDate)&&inSet(r[PC.ch],f.channels)&&inSet(r[PC.st],f.stores)&&inSet(r[PC.cat],f.categories)&&inSet(r[PC.mdl],f.models));
+}
+function getSalesRows(f){return fSales(D.sales.rows,f)}
+function getPromoRows(f){return fPromo(D.promo.rows,f)}
+
+// ==================== AGGREGATION ====================
+function aggSales(rows){
+const a={visitors:0,views:0,addCart:0,addCartItems:0,buyers:0,items:0,amount:0,refund:0};
+for(const r of rows){a.visitors+=r[SC.vis];a.views+=r[SC.vw];a.addCart+=r[SC.ac];a.addCartItems+=r[SC.aci];a.buyers+=r[SC.byr];a.items+=r[SC.itm];a.amount+=r[SC.amt];a.refund+=r[SC.rfd]}
+return a;
+}
+function aggPromo(rows){
+const a={cost:0,impressions:0,clicks:0,totalAmount:0,directAmount:0,indirectAmount:0,totalOrders:0,totalCart:0};
+for(const r of rows){a.cost+=r[PC.cost];a.impressions+=r[PC.imp];a.clicks+=r[PC.clk];a.totalAmount+=r[PC.tot];a.directAmount+=r[PC.dir];a.indirectAmount+=r[PC.ind];a.totalOrders+=r[PC.ord];a.totalCart+=r[PC.cart]}
+return a;
+}
+function calcSK(a){
+return{
+amount:a.amount,items:a.items,buyers:a.buyers,visitors:a.visitors,
+convRate:a.visitors>0?a.buyers/a.visitors*100:0,
+avgPrice:a.buyers>0?a.amount/a.buyers:0,
+addCartRate:a.visitors>0?a.addCart/a.visitors*100:0,
+refund:a.refund,refundRate:a.amount>0?a.refund/a.amount*100:0,
+views:a.views,addCart:a.addCart
+};
+}
+function calcPK(p,s){
+return{
+cost:p.cost,roi:p.cost>0?p.totalAmount/p.cost:0,
+ctr:p.impressions>0?p.clicks/p.impressions*100:0,
+cpc:p.clicks>0?p.cost/p.clicks:0,
+totalAmount:p.totalAmount,directAmount:p.directAmount,
+directROI:p.cost>0?p.directAmount/p.cost:0,
+promoConvRate:p.clicks>0?p.totalOrders/p.clicks*100:0,
+promoRatio:s.amount>0?p.directAmount/s.amount*100:0,
+feeRate:s.amount>0?p.cost/s.amount*100:0,
+impressions:p.impressions,clicks:p.clicks,totalOrders:p.totalOrders,totalCart:p.totalCart
+};
+}
+function getKPIs(startDate,endDate){
+const f={...S.filters,startDate,endDate};
+const sRows=getSalesRows(f);const pRows=getPromoRows(f);
+const sAgg=aggSales(sRows);const pAgg=aggPromo(pRows);
+return{...calcSK(sAgg),...calcPK(pAgg,sAgg)};
+}
+
+// ==================== COMPARISON ====================
+function fmtDate(d){return d.toISOString().split('T')[0]}
+function getMoMDates(){
+const s=new Date(S.filters.startDate),e=new Date(S.filters.endDate);
+const days=Math.floor((e-s)/86400000)+1;
+const pe=new Date(s.getTime()-86400000);
+const ps=new Date(pe.getTime()-(days-1)*86400000);
+return{start:fmtDate(ps),end:fmtDate(pe)};
+}
+function getYoYDates(){
+const s=new Date(S.filters.startDate),e=new Date(S.filters.endDate);
+const ps=new Date(s);ps.setFullYear(ps.getFullYear()-1);
+const pe=new Date(e);pe.setFullYear(pe.getFullYear()-1);
+return{start:fmtDate(ps),end:fmtDate(pe)};
+}
+function chgPct(c,p){if(p==null||p===0||!isFinite(p))return null;return(c-p)/Math.abs(p)*100}
+
+// ==================== GROUPING ====================
+function weekKey(ds){
+const d=new Date(ds);const day=d.getDay()||7;
+const m=new Date(d);m.setDate(d.getDate()-day+1);
+return fmtDate(m);
+}
+function monthKey(ds){return ds.substring(0,7)}
+function groupBy(rows,keyFn){
+const m=new Map();
+for(const r of rows){const k=keyFn(r);if(!m.has(k))m.set(k,[]);m.get(k).push(r)}
+return m;
+}
+function groupSalesByDate(rows,gran){
+const kf=gran==='day'?r=>r[SC.date]:gran==='week'?r=>weekKey(r[SC.date]):r=>monthKey(r[SC.date]);
+const m=groupBy(rows,kf);
+return[...m.entries()].sort((a,b)=>a[0].localeCompare(b[0]));
+}
+function groupSalesByDim(rows,dim){
+const idx={channel:SC.ch,store:SC.st,category:SC.cat,model:SC.mdl}[dim];
+const m=groupBy(rows,r=>r[idx]);
+const result=[...m.entries()].map(([k,v])=>[dimName(dim,k),v]);
+return result;
+}
+function groupPromoByDate(rows,gran){
+const kf=gran==='day'?r=>r[PC.date]:gran==='week'?r=>weekKey(r[PC.date]):r=>monthKey(r[PC.date]);
+const m=groupBy(rows,kf);
+return[...m.entries()].sort((a,b)=>a[0].localeCompare(b[0]));
+}
+function groupPromoByDim(rows,dim){
+const idx={channel:PC.ch,store:PC.st,category:PC.cat,model:PC.mdl,marketingScene:PC.scn}[dim];
+const m=groupBy(rows,r=>r[idx]);
+const result=[...m.entries()].map(([k,v])=>[dimName(dim,k),v]);
+return result;
+}
+
+// ==================== FORMATTING ====================
+function fmt(v,type){
+if(v==null||isNaN(v))return'N/A';
+switch(type){
+case'wan':return(v/10000).toFixed(1);
+case'num':return Math.round(v).toLocaleString();
+case'pct':return v.toFixed(1);
+case'dec':return v.toFixed(2);
+case'money':return Math.round(v).toLocaleString();
+case'int':return Math.round(v).toString();
+default:return String(v);
+}
+}
+function fmtChg(c,inv){
+if(c==null)return'<span class="chg-na">N/A</span>';
+const pos=c>=0;const good=inv?!pos:pos;
+const color=good?'var(--green)':'var(--red)';
+const arrow=pos?'▲':'▼';
+return`<span style="color:${color}">${arrow}${Math.abs(c).toFixed(1)}%</span>`;
+}
+
+// ==================== HTML HELPERS ====================
+function kpiCard(label,val,unit,mom,yoy,inv){
+return`<div class="kpi-card"><div class="kpi-label">${label}</div><div class="kpi-value">${val}<span class="kpi-unit">${unit}</span></div><div class="kpi-compare"><span>环比 ${fmtChg(mom,inv)}</span><span>同比 ${fmtChg(yoy,inv)}</span></div></div>`;
+}
+function chartCard(id,title,ctrl){
+return`<div class="chart-card"><div class="chart-card-title">${title}${ctrl||''}</div><div id="${id}" style="height:300px"></div></div>`;
+}
+function plot(id,traces,layout){
+const el=document.getElementById(id);
+if(!el)return;
+Plotly.react(id,traces,{...LAYOUT,...(layout||{})},CONFIG);
+}
+function tableHTML(headers,rows,opts){
+opts=opts||{};
+let h='<table class="data-table"><thead><tr>'+headers.map(x=>`<th style="text-align:${x.align||'left'}">${x.text}</th>`).join('')+'</tr></thead><tbody>';
+for(const r of rows){
+if(r._total)h+=`<tr class="total-row">`;else h+=`<tr>`;
+h+=r.map((c,i)=>`<td style="text-align:${headers[i].align||'left'}">${c}</td>`).join('')+'</tr>';
+}
+h+='</tbody></table>';
+return h;
+}
+function section(title,content){
+return`<div class="section"><div class="section-title">${title}</div>${content}</div>`;
+}
+
+// ==================== KPI CONFIGS ====================
+const TAB0_KPIS=[
+[{l:'支付金额',k:'amount',u:'万',f:'wan'},{l:'支付件数',k:'items',u:'',f:'num'},{l:'支付买家',k:'buyers',u:'',f:'num'},{l:'访客数',k:'visitors',u:'',f:'num'},{l:'转化率',k:'convRate',u:'%',f:'pct'}],
+[{l:'客单价',k:'avgPrice',u:'元',f:'money'},{l:'加购率',k:'addCartRate',u:'%',f:'pct'},{l:'推广费',k:'cost',u:'元',f:'money',inv:true},{l:'ROI',k:'roi',u:'',f:'dec'},{l:'费率',k:'feeRate',u:'%',f:'pct',inv:true}],
+[{l:'直接ROI',k:'directROI',u:'',f:'dec'},{l:'点击率',k:'ctr',u:'%',f:'pct'},{l:'CPC',k:'cpc',u:'元',f:'dec',inv:true},{l:'推广转化率',k:'promoConvRate',u:'%',f:'pct'},{l:'推广成交占比',k:'promoRatio',u:'%',f:'pct'}]
+];
+const TAB1_KPIS=[
+[{l:'推广花费',k:'cost',u:'元',f:'money',inv:true},{l:'ROI',k:'roi',u:'',f:'dec'},{l:'点击率',k:'ctr',u:'%',f:'pct'},{l:'CPC',k:'cpc',u:'元',f:'dec',inv:true},{l:'总成交金额',k:'totalAmount',u:'元',f:'money'},{l:'推广转化率',k:'promoConvRate',u:'%',f:'pct'}]
+];
+const TAB2_S_KPIS=[
+{l:'支付金额',k:'amount',f:'wan',u:'万'},{l:'支付件数',k:'items',f:'num',u:''},{l:'支付买家',k:'buyers',f:'num',u:''},{l:'访客数',k:'visitors',f:'num',u:''},{l:'转化率',k:'convRate',f:'pct',u:'%'},{l:'客单价',k:'avgPrice',f:'money',u:'元'},{l:'加购率',k:'addCartRate',f:'pct',u:'%'}
+];
+const TAB2_P_KPIS=[
+{l:'花费',k:'cost',f:'money',u:'元',inv:true},{l:'ROI',k:'roi',f:'dec',u:''},{l:'点击率',k:'ctr',f:'pct',u:'%'},{l:'直接成交',k:'directAmount',f:'money',u:'元'},{l:'加购',k:'totalCart',f:'num',u:''},{l:'展现',k:'impressions',f:'num',u:''},{l:'点击',k:'clicks',f:'num',u:''}
+];
+
+function renderKPIs(containerId,kpiConfig,curr,mom,yoy){
+const html=kpiConfig.map(row=>`<div class="kpi-row">${row.map(k=>{
+const v=curr[k.k],mv=mom?mom[k.k]:null,yv=yoy?yoy[k.k]:null;
+const mChg=chgPct(v,mv),yChg=chgPct(v,yv);
+return kpiCard(k.l,fmt(v,k.f),k.u,mChg,yChg,k.inv);
+}).join('')}</div>`).join('');
+document.getElementById(containerId).innerHTML=html;
+}
+
+// ==================== FILTER UI ====================
+function initFilters(){
+const maxDate=D.meta.dateRange.end;
+const end=new Date(maxDate);
+const start=new Date(end);start.setDate(start.getDate()-29);
+S.filters.startDate=fmtDate(start);
+S.filters.endDate=maxDate;
+document.getElementById('dataRange').textContent=`${D.meta.dateRange.start} ~ ${D.meta.dateRange.end}`;
+const fb=document.getElementById('filterBar');
+let html=`
+<div class="filter-group"><label>日期</label>
+<input type="date" id="fStart" value="${S.filters.startDate}" min="${D.meta.dateRange.start}" max="${maxDate}">
+<span>~</span>
+<input type="date" id="fEnd" value="${S.filters.endDate}" min="${D.meta.dateRange.start}" max="${maxDate}">
+</div>
+<div class="ms-container" id="msc-channel"></div>
+<div class="ms-container" id="msc-store"></div>
+<div class="ms-container" id="msc-category"></div>
+<div class="ms-container" id="msc-model"></div>
+<button class="btn-apply" onclick="applyFilters()">应用筛选</button>`;
+fb.innerHTML=html;
+initMS('channel','渠道');
+initMS('store','店铺');
+initMS('category','品类');
+initMS('model','型号');
+document.addEventListener('click',()=>{document.querySelectorAll('.ms-panel').forEach(p=>p.classList.remove('show'))});
+}
+function initMS(dim,label){
+const items=D.meta[dim+'s'];
+const c=document.getElementById('msc-'+dim);
+c.innerHTML=`<button class="ms-btn" onclick="event.stopPropagation();toggleMS('${dim}')"><span>${label}:</span><span class="ms-val" id="msv-${dim}">全部</span><span class="ms-arrow">▾</span></button>
+<div class="ms-panel" id="msp-${dim}">
+<div class="ms-actions"><button onclick="event.stopPropagation();selectAllMS('${dim}',true)">全选</button><button onclick="event.stopPropagation();selectAllMS('${dim}',false)">清空</button></div>
+${items.map((it,i)=>`<label class="ms-item"><input type="checkbox" value="${i}" checked data-dim="${dim}"><span>${it}</span></label>`).join('')}
+</div>`;
+}
+function toggleMS(dim){
+document.querySelectorAll('.ms-panel').forEach(p=>{if(p.id!=='msp-'+dim)p.classList.remove('show')});
+const p=document.getElementById('msp-'+dim);
+p.classList.toggle('show');
+updateMSVal(dim);
+}
+function selectAllMS(dim,all){
+document.querySelectorAll(`#msp-${dim} input`).forEach(cb=>cb.checked=all);
+updateMSVal(dim);
+}
+function updateMSVal(dim){
+const cbs=document.querySelectorAll(`#msp-${dim} input`);
+const checked=[...cbs].filter(c=>c.checked);
+const val=checked.length===cbs.length?'全部':checked.length===0?'无':`${checked.length}/${cbs.length}`;
+document.getElementById('msv-'+dim).textContent=val;
+}
+function getSelectedSet(dim){
+const cbs=document.querySelectorAll(`#msp-${dim} input:checked`);
+return new Set([...cbs].map(c=>parseInt(c.value)));
+}
+function applyFilters(){
+S.filters.startDate=document.getElementById('fStart').value;
+S.filters.endDate=document.getElementById('fEnd').value;
+S.filters.channels=getSelectedSet('channel');
+S.filters.stores=getSelectedSet('store');
+S.filters.categories=getSelectedSet('category');
+S.filters.models=getSelectedSet('model');
+renderTab(S.activeTab);
+}
+
+// ==================== TAB SWITCHING ====================
+function switchTab(idx){
+S.activeTab=idx;
+document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',i===idx));
+document.querySelectorAll('.tab-panel').forEach((p,i)=>p.classList.toggle('active',i===idx));
+renderTab(idx);
+}
+function renderTab(idx){
+const fns=[renderTab0,renderTab1,renderTab2,renderTab3,renderTab4,renderTab5,renderTab6];
+fns[idx]();
+}
+
+// ==================== TAB 0: 经营总览 ====================
+function renderTab0(){
+const curr=getKPIs(S.filters.startDate,S.filters.endDate);
+const md=getMoMDates(),yd=getYoYDates();
+const mom=getKPIs(md.start,md.end),yoy=getKPIs(yd.start,yd.end);
+renderKPIs('tab0',TAB0_KPIS,curr,mom,yoy);
+
+const sRows=getSalesRows(S.filters);
+const pRows=getPromoRows(S.filters);
+const gran=S.tab0.gran;
+const sd=groupSalesByDate(sRows,gran);
+const pd=groupPromoByDate(pRows,gran);
+
+const dates=sd.map(d=>d[0]);
+const amounts=sd.map(d=>aggSales(d[1]).amount);
+const visitors=sd.map(d=>aggSales(d[1]).visitors);
+const convRates=sd.map(d=>{const a=aggSales(d[1]);return a.visitors>0?a.buyers/a.visitors*100:0});
+
+const ctrl=`<div class="ctrl"><button class="${gran==='day'?'active':''}" onclick="S.tab0.gran='day';renderTab0()">日</button><button class="${gran==='week'?'active':''}" onclick="S.tab0.gran='week';renderTab0()">周</button><button class="${gran==='month'?'active':''}" onclick="S.tab0.gran='month';renderTab0()">月</button></div>`;
+
+let html=`<div id="tab0-kpis"></div>`;
+html+=`<div class="chart-grid cg-2">`;
+html+=chartCard('t0-trend',`支付金额&访客数趋势`,ctrl);
+html+=chartCard('t0-conv','转化率趋势',ctrl);
+html+=`</div>`;
+html+=`<div class="chart-grid cg-3">`;
+html+=chartCard('t0-channel','渠道占比');
+html+=chartCard('t0-store','店铺排行Top10');
+html+=chartCard('t0-cat','品类排行');
+html+=`</div>`;
+html+=`<div class="chart-grid cg-1">`;
+html+=chartCard('t0-model','单品排行Top12');
+html+=`</div>`;
+document.getElementById('tab0').innerHTML=html;
+renderKPIs('tab0-kpis',TAB0_KPIS,curr,mom,yoy);
+
+// Trend: bar+line dual Y
+plot('t0-trend',[
+{x:dates,y:amounts.map(a=>a/10000),type:'bar',name:'支付金额(万)',marker:{color:'rgba(212,175,55,0.6)'}},
+{x:dates,y:visitors,type:'scatter',mode:'lines',name:'访客数',yaxis:'y2',line:{color:'#4FC3F7',width:2}}
+],{yaxis2:{overlaying:'y',side:'right',gridcolor:'rgba(255,255,255,0.04)',tickfont:{size:9}}});
+
+// Conversion rate area
+plot('t0-conv',[
+{x:dates,y:convRates,type:'scatter',mode:'lines',name:'转化率(%)',fill:'tozeroy',line:{color:'#66BB6A'},fillcolor:'rgba(102,187,106,0.15)'}
+]);
+
+// Channel donut
+const chData=groupSalesByDim(sRows,'channel').map(([n,rs])=>[n,aggSales(rs).amount]).sort((a,b)=>b[1]-a[1]);
+plot('t0-channel',[
+{values:chData.map(d=>d[1]),labels:chData.map(d=>d[0]),type:'pie',hole:0.6,marker:{colors:COLORS},textfont:{size:10}}
+],{showlegend:false});
+
+// Store ranking
+const stData=groupSalesByDim(sRows,'store').map(([n,rs])=>[n,aggSales(rs).amount]).sort((a,b)=>b[1]-a[1]).slice(0,10);
+plot('t0-store',[
+{x:stData.map(d=>d[1]/10000),y:stData.map(d=>d[0]),type:'bar',orientation:'h',marker:{color:COLORS[0]},text:stData.map(d=>(d[1]/10000).toFixed(1)),textposition:'outside',textfont:{size:9}}
+],{margin:{l:100,r:20,t:10,b:30},xaxis:{gridcolor:'rgba(255,255,255,0.04)'},yaxis:{autorange:'reversed'}});
+
+// Category ranking
+const catData=groupSalesByDim(sRows,'category').map(([n,rs])=>[n,aggSales(rs).amount]).sort((a,b)=>b[1]-a[1]);
+plot('t0-cat',[
+{x:catData.map(d=>d[1]/10000),y:catData.map(d=>d[0]),type:'bar',orientation:'h',marker:{color:COLORS[1]},text:catData.map(d=>(d[1]/10000).toFixed(1)),textposition:'outside',textfont:{size:9}}
+],{margin:{l:80,r:20,t:10,b:30},xaxis:{gridcolor:'rgba(255,255,255,0.04)'},yaxis:{autorange:'reversed'}});
+
+// Model ranking
+const mdlData=groupSalesByDim(sRows,'model').map(([n,rs])=>[n,aggSales(rs).amount]).sort((a,b)=>b[1]-a[1]).slice(0,12);
+plot('t0-model',[
+{x:mdlData.map(d=>d[1]/10000),y:mdlData.map(d=>d[0]),type:'bar',orientation:'h',marker:{color:COLORS[2]},text:mdlData.map(d=>(d[1]/10000).toFixed(1)),textposition:'outside',textfont:{size:9}}
+],{margin:{l:120,r:20,t:10,b:30},xaxis:{gridcolor:'rgba(255,255,255,0.04)'},yaxis:{autorange:'reversed'}});
+}
+
+// ==================== TAB 1: 推广分析 ====================
+function renderTab1(){
+const curr=getKPIs(S.filters.startDate,S.filters.endDate);
+const md=getMoMDates(),yd=getYoYDates();
+const mom=getKPIs(md.start,md.end),yoy=getKPIs(yd.start,yd.end);
+const sRows=getSalesRows(S.filters);
+const pRows=getPromoRows(S.filters);
+const pd=groupPromoByDate(pRows,'day');
+
+let html=`<div id="tab1-kpis"></div>`;
+html+=`<div class="chart-grid cg-1">${chartCard('t1-trend','推广费&成交金额趋势')}${chartCard('t1-roi','ROI趋势')}</div>`;
+html+=`<div class="chart-grid cg-2">${chartCard('t1-store-matrix','店铺推广矩阵')}${chartCard('t1-ch-matrix','渠道推广矩阵')}</div>`;
+html+=`<div class="chart-grid cg-2">${chartCard('t1-top-plans','TOP10推广单品排行')}${chartCard('t1-model-promo','单品推广分析Top10')}</div>`;
+html+=`<div class="chart-grid cg-1">${chartCard('t1-scene','营销场景推广占比')}</div>`;
+document.getElementById('tab1').innerHTML=html;
+renderKPIs('tab1-kpis',TAB1_KPIS,curr,mom,yoy);
+
+// Trend: bar(cost)+line(amount) dual Y
+const dates=pd.map(d=>d[0]);
+const costs=pd.map(d=>aggPromo(d[1]).cost);
+const totals=pd.map(d=>aggPromo(d[1]).totalAmount);
+const rois=pd.map(d=>{const a=aggPromo(d[1]);return a.cost>0?a.totalAmount/a.cost:0});
+plot('t1-trend',[
+{x:dates,y:costs,type:'bar',name:'推广费',marker:{color:'rgba(212,175,55,0.6)'}},
+{x:dates,y:totals,type:'scatter',mode:'lines',name:'成交金额',yaxis:'y2',line:{color:'#4FC3F7',width:2}}
+],{yaxis2:{overlaying:'y',side:'right',gridcolor:'rgba(255,255,255,0.04)',tickfont:{size:9}}});
+
+plot('t1-roi',[
+{x:dates,y:rois,type:'scatter',mode:'lines',name:'ROI',line:{color:'#66BB6A',width:2},fill:'tozeroy',fillcolor:'rgba(102,187,106,0.1)'}
+]);
+
+// Store promo matrix
+const stPromo=groupPromoByDim(pRows,'store').map(([n,rs])=>{const a=aggPromo(rs);return{n,cost:a.cost,totalAmount:a.totalAmount,roi:a.cost>0?a.totalAmount/a.cost:0,ctr:a.impressions>0?a.clicks/a.impressions*100:0,cpc:a.clicks>0?a.cost/a.clicks:0}}).sort((a,b)=>b.cost-a.cost);
+const stMom=groupPromoByDim(fPromo(D.promo.rows,{...S.filters,startDate:md.start,endDate:md.end}),'store');
+const stMomMap=new Map(stMom.map(([n,rs])=>[n,aggPromo(rs)]));
+const stHTML=tableHTML(
+[{text:'店铺'},{text:'花费',align:'right'},{text:'环比',align:'right'},{text:'ROI',align:'right'},{text:'点击率',align:'right'},{text:'CPC',align:'right'}],
+stPromo.map(s=>{
+const prevA=stMomMap.get(s.n);
+const prevCost=prevA?prevA.cost:0;
+const chg=prevCost>0?chgPct(s.cost,prevCost):null;
+return[s.n,fmt(s.cost,'money'),fmtChg(chg,true),fmt(s.roi,'dec'),fmt(s.ctr,'pct')+'%',fmt(s.cpc,'dec')+'元'];
+})
+);
+document.getElementById('t1-store-matrix').querySelector('div').innerHTML=stHTML;
+
+// Channel promo matrix
+const chPromo=groupPromoByDim(pRows,'channel').map(([n,rs])=>{const a=aggPromo(rs);return{n,cost:a.cost,totalAmount:a.totalAmount,roi:a.cost>0?a.totalAmount/a.cost:0,ctr:a.impressions>0?a.clicks/a.impressions*100:0,cpc:a.clicks>0?a.cost/a.clicks:0}}).sort((a,b)=>b.cost-a.cost);
+const chHTML=tableHTML(
+[{text:'渠道'},{text:'花费',align:'right'},{text:'ROI',align:'right'},{text:'点击率',align:'right'},{text:'CPC',align:'right'},{text:'成交金额',align:'right'}],
+chPromo.map(s=>[s.n,fmt(s.cost,'money'),fmt(s.roi,'dec'),fmt(s.ctr,'pct')+'%',fmt(s.cpc,'dec')+'元',fmt(s.totalAmount,'money')])
+);
+document.getElementById('t1-ch-matrix').querySelector('div').innerHTML=chHTML;
+
+// Top10 promo plans
+const topPlans=groupPromoByDim(pRows,'model').map(([n,rs])=>{const a=aggPromo(rs);return{n,cost:a.cost,roi:a.cost>0?a.totalAmount/a.cost:0,totalAmount:a.totalAmount}}).sort((a,b)=>b.cost-a.cost).slice(0,10);
+plot('t1-top-plans',[
+{x:topPlans.map(d=>d.cost),y:topPlans.map(d=>d.n),type:'bar',orientation:'h',name:'花费',marker:{color:'rgba(212,175,55,0.7)'},text:topPlans.map(d=>fmt(d.cost,'money')),textposition:'outside',textfont:{size:9}}
+],{margin:{l:120,r:60,t:10,b:30},xaxis:{gridcolor:'rgba(255,255,255,0.04)'},yaxis:{autorange:'reversed'}});
+
+// Model promo analysis: dual bar (cost + ROI)
+plot('t1-model-promo',[
+{x:topPlans.map(d=>d.n),y:topPlans.map(d=>d.cost),type:'bar',name:'花费',marker:{color:'rgba(212,175,55,0.7)'}},
+{x:topPlans.map(d=>d.n),y:topPlans.map(d=>d.roi),type:'bar',name:'ROI',yaxis:'y2',marker:{color:'rgba(79,195,247,0.7)'}}
+],{margin:{l:50,r:50,b:80},xaxis:{tickangle:-45,tickfont:{size:8}},yaxis2:{overlaying:'y',side:'right',gridcolor:'rgba(255,255,255,0.04)'}});
+
+// Marketing scene pie
+const scData=groupPromoByDim(pRows,'marketingScene').map(([n,rs])=>[n,aggPromo(rs).cost]).sort((a,b)=>b[1]-a[1]);
+plot('t1-scene',[
+{values:scData.map(d=>d[1]),labels:scData.map(d=>d[0]),type:'pie',hole:0.5,marker:{colors:COLORS},textfont:{size:10}}
+],{showlegend:true,legend:{x:0.8,y:0.5,font:{size:9}}});
+}
+
+// ==================== TAB 2: 时间段对比 ====================
+function renderTab2(){
+const mode=S.tab2.mode;
+let pA={start:S.filters.startDate,end:S.filters.endDate},pB;
+let lblA='本期',lblB='对比期';
+if(mode==='mom'){pB=getMoMDates();lblB='环比'}
+else if(mode==='yoy'){pB=getYoYDates();lblB='同比'}
+else{pB={start:S.filters.startDate,end:S.filters.endDate};lblB='自定义'}
+
+const kA=getKPIs(pA.start,pA.end),kB=getKPIs(pB.start,pB.end);
+
+let html=`<div class="sel-row">
+<label>对比模式:</label>
+<select onchange="S.tab2.mode=this.value;renderTab2()">
+<option value="mom" ${mode==='mom'?'selected':''}>环比</option>
+<option value="yoy" ${mode==='yoy'?'selected':''}>同比</option>
+</select>
+<span style="color:var(--txt3);font-size:11px">本期: ${pA.start} ~ ${pA.end} | ${lblB}: ${pB.start} ~ ${pB.end}</span>
+</div>`;
+
+// Sales comparison KPIs
+html+=section('销售对比',`<div id="t2-skpis" class="kpi-row" style="grid-template-columns:repeat(7,1fr)"></div>
+<div class="chart-grid cg-2">${chartCard('t2-s-bar','销售对比')}${chartCard('t2-s-chg','变化率')}</div>`);
+
+// Promo comparison KPIs
+html+=section('推广对比',`<div id="t2-pkpis" class="kpi-row" style="grid-template-columns:repeat(7,1fr)"></div>
+<div class="chart-grid cg-2">${chartCard('t2-p-bar','推广对比')}${chartCard('t2-p-chg','变化率')}</div>`);
+
+// Dimension comparison table
+html+=section('维度对比',`<div class="sel-row"><label>维度:</label>
+<select id="t2-dim" onchange="renderTab2Table()">
+<option value="channel">渠道</option><option value="store">店铺</option><option value="category">品类</option><option value="model">型号</option>
+</select></div>
+<div class="table-wrap" id="t2-dim-table"></div>`);
+
+document.getElementById('tab2').innerHTML=html;
+
+// Render KPIs (simplified: show value + change)
+const sHTML=TAB2_S_KPIS.map(k=>{
+const v=kA[k.k],v2=kB[k.k],c=chgPct(v,v2);
+return kpiCard(k.l,fmt(v,k.f),k.u,c,null,k.inv);
+}).join('');
+document.getElementById('t2-skpis').innerHTML=sHTML;
+
+const pHTML=TAB2_P_KPIS.map(k=>{
+const v=kA[k.k],v2=kB[k.k],c=chgPct(v,v2);
+return kpiCard(k.l,fmt(v,k.f),k.u,c,null,k.inv);
+}).join('');
+document.getElementById('t2-pkpis').innerHTML=pHTML;
+
+// Sales comparison bar chart
+const sLabels=TAB2_S_KPIS.map(k=>k.l);
+const sValsA=TAB2_S_KPIS.map(k=>{const v=kA[k.k];return k.f==='wan'?v/10000:v});
+const sValsB=TAB2_S_KPIS.map(k=>{const v=kB[k.k];return k.f==='wan'?v/10000:v});
+plot('t2-s-bar',[
+{x:sLabels,y:sValsA,type:'bar',name:lblA,marker:{color:'rgba(212,175,55,0.7)'}},
+{x:sLabels,y:sValsB,type:'bar',name:lblB,marker:{color:'rgba(79,195,247,0.5)'}}
+],{bargap:0.3,legend:{x:0.3,y:1.1,orientation:'h'}});
+
+const sChg=TAB2_S_KPIS.map(k=>{const c=chgPct(kA[k.k],kB[k.k]);return c==null?0:c});
+plot('t2-s-chg',[
+{x:sLabels,y:sChg,type:'bar',marker:{color:sChg.map(c=>c>=0?'#30D158':'#FF453A')},text:sChg.map(c=>(c>=0?'+':'')+c.toFixed(1)+'%'),textposition:'outside',textfont:{size:9}}
+],{showlegend:false});
+
+// Promo comparison bar chart
+const pLabels=TAB2_P_KPIS.map(k=>k.l);
+const pValsA=TAB2_P_KPIS.map(k=>{const v=kA[k.k];return k.f==='wan'?v/10000:v});
+const pValsB=TAB2_P_KPIS.map(k=>{const v=kB[k.k];return k.f==='wan'?v/10000:v});
+plot('t2-p-bar',[
+{x:pLabels,y:pValsA,type:'bar',name:lblA,marker:{color:'rgba(212,175,55,0.7)'}},
+{x:pLabels,y:pValsB,type:'bar',name:lblB,marker:{color:'rgba(79,195,247,0.5)'}}
+],{bargap:0.3,legend:{x:0.3,y:1.1,orientation:'h'}});
+
+const pChg=TAB2_P_KPIS.map(k=>{const c=chgPct(kA[k.k],kB[k.k]);return c==null?0:c});
+plot('t2-p-chg',[
+{x:pLabels,y:pChg,type:'bar',marker:{color:pChg.map(c=>c>=0?'#30D158':'#FF453A')},text:pChg.map(c=>(c>=0?'+':'')+c.toFixed(1)+'%'),textposition:'outside',textfont:{size:9}}
+],{showlegend:false});
+
+renderTab2Table();
+}
+
+function renderTab2Table(){
+const sel=document.getElementById('t2-dim');
+if(!sel)return;
+const dim=sel.value;
+const mode=S.tab2.mode;
+let pA={start:S.filters.startDate,end:S.filters.endDate},pB;
+if(mode==='mom')pB=getMoMDates();else pB=getYoYDates();
+const sRowsA=getSalesRows({...S.filters,...pA}),sRowsB=getSalesRows({...S.filters,...pB});
+const gA=groupSalesByDim(sRowsA,dim),gB=new Map(groupSalesByDim(sRowsB,dim));
+const data=gA.map(([n,rs])=>{
+const a=aggSales(rs);const bArr=gB.get(n);const b=bArr?aggSales(bArr):{amount:0,visitors:0,buyers:0,items:0};
+const cr=a.visitors>0?a.buyers/a.visitors*100:0;
+const crB=b.visitors>0?b.buyers/b.visitors*100:0;
+const ap=a.buyers>0?a.amount/a.buyers:0;
+const acr=a.visitors>0?a.addCart/a.visitors*100:0;
+return{n,amtA:a.amount,amtB:b.amount,itmA:a.items,itmB:b.items,visA:a.visitors,visB:b.visitors,crA:cr,crB:crB,apA:ap,acrA:acr};
+}).sort((a,b)=>b.amtA-a.amtA);
+const total={amtA:0,amtB:0,itmA:0,itmB:0,visA:0,visB:0,byrA:0,byrB:0,acA:0,acB:0};
+data.forEach(d=>{total.amtA+=d.amtA;total.amtB+=d.amtB;total.itmA+=d.itmA;total.itmB+=d.itmB;total.visA+=d.visA;total.visB+=d.visB});
+const rows=data.map(d=>{
+const chg=chgPct(d.amtA,d.amtB);
+return[d.n,fmt(d.amtA,'wan'),fmt(d.amtB,'wan'),fmtChg(chg),fmt(d.itmA,'num'),fmt(d.itmA/d.itmB*100-100||0,'dec')+'%',fmt(d.visA,'num'),fmt(d.visA/d.visB*100-100||0,'dec')+'%'];
+});
+rows.push({_total:true,0:'合计',1:fmt(total.amtA,'wan'),2:fmt(total.amtB,'wan'),3:fmtChg(chgPct(total.amtA,total.amtB)),4:fmt(total.itmA,'num'),5:fmt(total.itmA/total.itmB*100-100||0,'dec')+'%',6:fmt(total.visA,'num'),7:fmt(total.visA/total.visB*100-100||0,'dec')+'%'});
+document.getElementById('t2-dim-table').innerHTML=tableHTML(
+[{text:dim==='channel'?'渠道':dim==='store'?'店铺':dim==='category'?'品类':'型号'},{text:'本期金额(万)',align:'right'},{text:'对比金额(万)',align:'right'},{text:'变化率',align:'right'},{text:'本期件数',align:'right'},{text:'件数变化',align:'right'},{text:'本期访客',align:'right'},{text:'访客变化',align:'right'}],
+rows
+);
+}
+
+// ==================== TAB 3: 趋势分析 ====================
+function renderTab3(){
+const dim=S.tab3.dim,cmp=S.tab3.cmp,gran=S.tab3.gran;
+let html=`<div class="sel-row">
+<label>维度:</label><select onchange="S.tab3.dim=this.value;renderTab3()">
+<option value="date" ${dim==='date'?'selected':''}>日期</option>
+<option value="channel" ${dim==='channel'?'selected':''}>渠道</option>
+<option value="store" ${dim==='store'?'selected':''}>店铺</option>
+<option value="category" ${dim==='category'?'selected':''}>品类</option>
+<option value="model" ${dim==='model'?'selected':''}>型号</option></select>
+<label>对比:</label><select onchange="S.tab3.cmp=this.value;renderTab3()">
+<option value="yoy" ${cmp==='yoy'?'selected':''}>同比</option>
+<option value="mom" ${cmp==='mom'?'selected':''}>上月同期</option></select>
+<label>粒度:</label><select onchange="S.tab3.gran=this.value;renderTab3()">
+<option value="day" ${gran==='day'?'selected':''}>日</option>
+<option value="week" ${gran==='week'?'selected':''}>周</option>
+<option value="month" ${gran==='month'?'selected':''}>月</option></select>
+</div>`;
+
+html+=section('日度汇总表',`<div class="table-wrap" id="t3-daily-table" style="max-height:300px"></div>`);
+html+=section('月度汇总表',`<div class="table-wrap" id="t3-monthly-table" style="max-height:300px"></div>`);
+html+=`<div class="chart-grid cg-1">${chartCard('t3-trend','支付金额&访客数趋势')}${chartCard('t3-rates','转化率&加购率趋势')}${chartCard('t3-yoy','月度同比叠加')}${chartCard('t3-dow','周内趋势(周一~周日均值)')}</div>`;
+html+=section('推广趋势',`<div class="sel-row"><label>粒度:</label>
+<select onchange="S.tab3.pGran=this.value;renderTab3Promo(this.value)">
+<option value="day">日</option><option value="week">周</option><option value="month">月</option></select></div>
+<div id="t3-promo-charts"></div>`);
+
+document.getElementById('tab3').innerHTML=html;
+
+// Daily table
+const sRows=getSalesRows(S.filters);
+const md=getMoMDates(),yd=getYoYDates();
+const sRowsCmp=getSalesRows({...S.filters,startDate:cmp==='yoy'?yd.start:md.start,endDate:cmp==='yoy'?yd.end:md.end});
+
+let dailyData;
+if(dim==='date'){
+dailyData=groupSalesByDate(sRows,gran);
+const cmpMap=new Map(groupSalesByDate(sRowsCmp,gran));
+const rows=dailyData.map(([d,rs])=>{
+const a=aggSales(rs);
+const cmpRs=cmpMap.get(d);
+const cA=cmpRs?aggSales(cmpRs):{amount:0,visitors:0};
+const cr=a.visitors>0?a.buyers/a.visitors*100:0;
+const chg=chgPct(a.amount,cA.amount);
+return[d,fmt(a.amount,'wan'),fmt(cA.amount,'wan'),fmtChg(chg),fmt(a.visitors,'num'),fmt(a.buyers,'num'),fmt(cr,'pct')+'%',fmt(a.amount>0?a.buyers>0?a.amount/a.buyers:0:0,'money')+'元'];
+});
+document.getElementById('t3-daily-table').innerHTML=tableHTML(
+[{text:'日期'},{text:'金额(万)',align:'right'},{text:'对比(万)',align:'right'},{text:'变化率',align:'right'},{text:'访客',align:'right'},{text:'买家',align:'right'},{text:'转化率',align:'right'},{text:'客单价',align:'right'}],
+rows
+);
+}else{
+dailyData=groupSalesByDim(sRows,dim);
+const cmpMap=new Map(groupSalesByDim(sRowsCmp,dim));
+const rows=dailyData.map(([n,rs])=>{
+const a=aggSales(rs);
+const cmpRs=cmpMap.get(n);
+const cA=cmpRs?aggSales(cmpRs):{amount:0,visitors:0};
+const cr=a.visitors>0?a.buyers/a.visitors*100:0;
+const chg=chgPct(a.amount,cA.amount);
+return[n,fmt(a.amount,'wan'),fmt(cA.amount,'wan'),fmtChg(chg),fmt(a.visitors,'num'),fmt(a.buyers,'num'),fmt(cr,'pct')+'%',fmt(a.buyers>0?a.amount/a.buyers:0,'money')+'元'];
+}).sort((a,b)=>b[4]-a[4]); // sort by visitors desc
+document.getElementById('t3-daily-table').innerHTML=tableHTML(
+[{text:'维度'},{text:'金额(万)',align:'right'},{text:'对比(万)',align:'right'},{text:'变化率',align:'right'},{text:'访客',align:'right'},{text:'买家',align:'right'},{text:'转化率',align:'right'},{text:'客单价',align:'right'}],
+rows
+);
+}
+
+// Monthly table
+const monthlyData=groupSalesByDate(sRows,'month');
+const monthlyCmpMap=new Map(groupSalesByDate(sRowsCmp,'month'));
+const mRows=monthlyData.map(([m,rs])=>{
+const a=aggSales(rs);
+const cmpRs=monthlyCmpMap.get(m);
+const cA=cmpRs?aggSales(cmpRs):{amount:0,visitors:0};
+const cr=a.visitors>0?a.buyers/a.visitors*100:0;
+const chg=chgPct(a.amount,cA.amount);
+return[m,fmt(a.amount,'wan'),fmt(cA.amount,'wan'),fmtChg(chg),fmt(a.visitors,'num'),fmt(a.buyers,'num'),fmt(cr,'pct')+'%',fmt(a.buyers>0?a.amount/a.buyers:0,'money')+'元'];
+});
+document.getElementById('t3-monthly-table').innerHTML=tableHTML(
+[{text:'月份'},{text:'金额(万)',align:'right'},{text:'对比(万)',align:'right'},{text:'变化率',align:'right'},{text:'访客',align:'right'},{text:'买家',align:'right'},{text:'转化率',align:'right'},{text:'客单价',align:'right'}],
+mRows
+);
+
+// Trend chart (dual Y)
+const dates=dailyData.map(d=>d[0]);
+const amounts=dailyData.map(d=>aggSales(d[1]).amount);
+const visitors=dailyData.map(d=>aggSales(d[1]).visitors);
+plot('t3-trend',[
+{x:dates,y:amounts.map(a=>a/10000),type:'bar',name:'支付金额(万)',marker:{color:'rgba(212,175,55,0.6)'}},
+{x:dates,y:visitors,type:'scatter',mode:'lines',name:'访客数',yaxis:'y2',line:{color:'#4FC3F7',width:2}}
+],{yaxis2:{overlaying:'y',side:'right',gridcolor:'rgba(255,255,255,0.04)'}});
+
+// Rates dual line
+const convRates=dailyData.map(d=>{const a=aggSales(d[1]);return a.visitors>0?a.buyers/a.visitors*100:0});
+const addRates=dailyData.map(d=>{const a=aggSales(d[1]);return a.visitors>0?a.addCart/a.visitors*100:0});
+plot('t3-rates',[
+{x:dates,y:convRates,type:'scatter',mode:'lines',name:'转化率(%)',line:{color:'#D4AF37',width:2}},
+{x:dates,y:addRates,type:'scatter',mode:'lines',name:'加购率(%)',line:{color:'#4FC3F7',width:2}}
+]);
+
+// Monthly YoY overlay
+const mDates=monthlyData.map(d=>d[0]);
+const mAmounts=monthlyData.map(d=>aggSales(d[1]).amount);
+const mAmountsCmp=monthlyData.map(([m,])=>{const c=monthlyCmpMap.get(m);return c?aggSales(c).amount:0});
+plot('t3-yoy',[
+{x:mDates,y:mAmounts.map(a=>a/10000),type:'bar',name:'本期',marker:{color:'rgba(212,175,55,0.6)'}},
+{x:mDates,y:mAmountsCmp.map(a=>a/10000),type:'scatter',mode:'lines+markers',name:'对比期',line:{color:'#FF7043',width:2}}
+]);
+
+// Day of week
+const dowNames=['周一','周二','周三','周四','周五','周六','周日'];
+const dowData=[0,0,0,0,0,0,0,0];
+const dowCount=[0,0,0,0,0,0,0,0];
+for(const r of sRows){
+const d=new Date(r[SC.date]);const dow=d.getDay()||7;
+dowData[dow]+=r[SC.amt];dowCount[dow]++;
+}
+const dowAvg=dowData.map((v,i)=>dowCount[i]>0?v/dowCount[i]:0);
+plot('t3-dow',[
+{x:dowNames,y:dowAvg.slice(1).map(v=>v/10000),type:'bar',name:'日均金额(万)',marker:{color:COLORS.slice(0,7)},text:dowAvg.slice(1).map(v=>(v/10000).toFixed(1)),textposition:'outside',textfont:{size:9}}
+]);
+
+renderTab3Promo('day');
+}
+function renderTab3Promo(gran){
+const pRows=getPromoRows(S.filters);
+const pd=groupPromoByDate(pRows,gran);
+const dates=pd.map(d=>d[0]);
+const costs=pd.map(d=>aggPromo(d[1]).cost);
+const amounts=pd.map(d=>aggPromo(d[1]).totalAmount);
+const rois=pd.map(d=>{const a=aggPromo(d[1]);return a.cost>0?a.totalAmount/a.cost:0});
+document.getElementById('t3-promo-charts').innerHTML=chartCard('t3-ptrend','推广费&成交趋势')+chartCard('t3-proi','ROI趋势');
+plot('t3-ptrend',[
+{x:dates,y:costs,type:'bar',name:'推广费',marker:{color:'rgba(212,175,55,0.6)'}},
+{x:dates,y:amounts,type:'scatter',mode:'lines',name:'成交金额',yaxis:'y2',line:{color:'#4FC3F7',width:2}}
+],{yaxis2:{overlaying:'y',side:'right',gridcolor:'rgba(255,255,255,0.04)'}});
+plot('t3-proi',[
+{x:dates,y:rois,type:'scatter',mode:'lines',name:'ROI',line:{color:'#66BB6A',width:2},fill:'tozeroy',fillcolor:'rgba(102,187,106,0.1)'}
+]);
+}
+
+// ==================== TAB 4: 智能诊断 ====================
+function renderTab4(){
+const curr=getKPIs(S.filters.startDate,S.filters.endDate);
+const md=getMoMDates(),yd=getYoYDates();
+const mom=getKPIs(md.start,md.end),yoy=getKPIs(yd.start,yd.end);
+const sRows=getSalesRows(S.filters);
+
+// GAP1: Target vs Actual (use targets data for 2026-07)
+let gap1HTML='';
+if(D.targetsParsed&&D.targetsParsed['2026-07']){
+const t=D.targetsParsed['2026-07'];
+let tAmt=0,aAmt=0,tItm=0,aItm=0;
+for(const store in t){
+for(const model in t[store]){
+const ind=t[store][model];
+if(ind['成交金额目标'])tAmt+=ind['成交金额目标'];
+if(ind['实际成交金额'])aAmt+=ind['实际成交金额'];
+if(ind['支付件数目标'])tItm+=ind['支付件数目标'];
+if(ind['实际支付件数'])aItm+=ind['实际支付件数'];
+}
+}
+const amtRate=tAmt>0?aAmt/tAmt*100:0;
+const itmRate=tItm>0?aItm/tItm*100:0;
+gap1HTML=`
+<div class="gap-metric"><span>成交金额目标</span><span>${fmt(tAmt,'money')}元</span></div>
+<div class="gap-metric"><span>实际成交金额</span><span>${fmt(aAmt,'money')}元</span></div>
+<div class="gap-metric"><span>达成率</span><span style="color:${amtRate>=100?'var(--green)':'var(--red)'}">${amtRate.toFixed(1)}%</span></div>
+<div class="gap-metric"><span>支付件数目标</span><span>${fmt(tItm,'num')}</span></div>
+<div class="gap-metric"><span>实际支付件数</span><span>${fmt(aItm,'num')}</span></div>
+<div class="gap-metric"><span>件数达成率</span><span style="color:${itmRate>=100?'var(--green)':'var(--red)'}">${itmRate.toFixed(1)}%</span></div>`;
+}else{
+gap1HTML='<div style="color:var(--txt3);font-size:12px">无目标数据</div>';
+}
+
+// GAP2: YoY
+const gap2Metrics=[['支付金额','amount','wan'],['支付件数','items','num'],['访客数','visitors','num'],['转化率','convRate','pct'],['ROI','roi','dec']];
+const gap2HTML=gap2Metrics.map(([l,k,f])=>{
+const c=chgPct(curr[k],yoy[k]);
+return`<div class="gap-metric"><span>${l}</span><span>${fmtChg(c)}</span></div>`;
+}).join('');
+
+// GAP3: MoM
+const gap3HTML=gap2Metrics.map(([l,k,f])=>{
+const c=chgPct(curr[k],mom[k]);
+return`<div class="gap-metric"><span>${l}</span><span>${fmtChg(c)}</span></div>`;
+}).join('');
+
+// Health scores
+function score(val,benchmark,inv){
+if(val==null)return 50;
+if(inv){
+if(val<=benchmark*0.5)return 100;
+if(val>=benchmark*2)return 0;
+return Math.round(100*(benchmark*2-val)/(benchmark*1.5));
+}
+if(val>=benchmark)return 100;
+if(val<=0)return 0;
+return Math.round(100*val/benchmark);
+}
+const gmvScore=score(chgPct(curr.amount,yoy.amount),0,true); // growth-based
+const visScore=score(chgPct(curr.visitors,yoy.visitors),0,true);
+const convScore=score(curr.convRate,3);
+const priceScore=score(curr.avgPrice,200);
+const refundScore=score(curr.refundRate,5,true);
+const scores=[{l:'GMV',v:Math.max(0,Math.min(100,50+gmvScore))},{l:'流量',v:Math.max(0,Math.min(100,50+visScore))},{l:'转化率',v:convScore},{l:'客单价',v:priceScore},{l:'退款率',v:refundScore}];
+
+// Shapley decomposition (MoM)
+const V0=mom.visitors,V1=curr.visitors;
+const C0=mom.visitors>0?mom.buyers/mom.visitors:0,C1=curr.visitors>0?curr.buyers/curr.visitors:0;
+const P0=mom.buyers>0?mom.amount/mom.buyers:0,P1=curr.buyers>0?curr.amount/curr.buyers:0;
+const GMV0=V0*C0*P0,GMV1=V1*C1*P1;
+const trafficEffect=(V1-V0)*C0*P0;
+const convEffect=V1*(C1-C0)*P0;
+const priceEffect=V1*C1*(P1-P0);
+
+let html=section('三GAP框架',`<div class="gap-grid">
+<div class="gap-card"><h4>GAP1: 目标 vs 实际</h4>${gap1HTML}</div>
+<div class="gap-card"><h4>GAP2: 今年 vs 去年(同比)</h4>${gap2HTML}</div>
+<div class="gap-card"><h4>GAP3: 本期 vs 上期(环比)</h4>${gap3HTML}</div>
+</div>`);
+
+html+=section('健康评分仪表盘',`<div class="gauge-grid" id="t4-gauges"></div>`);
+html+=section('Shapley归因(GMV环比变化分解)',`<div id="t4-shapley" style="height:350px"></div>`);
+html+=section('人货场分析',`<div class="chart-grid cg-3">${chartCard('t4-traffic','流量健康度')}${chartCard('t4-product','品类型号分析')}${chartCard('t4-channel','渠道效率分析')}</div>`);
+html+=section('执行清单(P0优先行动)',`<div id="t4-actions"></div>`);
+
+document.getElementById('tab4').innerHTML=html;
+
+// Gauges
+const gaugeHTML=scores.map(s=>`<div class="chart-card"><div class="chart-card-title">${s.l}评分</div><div id="gauge-${s.l}" style="height:200px"></div></div>`).join('');
+document.getElementById('t4-gauges').innerHTML=gaugeHTML;
+scores.forEach(s=>{
+const color=s.v>=70?'#30D158':s.v>=40?'#D4AF37':'#FF453A';
+plot('gauge-'+s.l,[{
+type:'indicator',mode:'gauge+number',value:s.v,
+gauge:{axis:{range:[0,100],tickcolor:'rgba(255,255,255,0.4)'},
+bar:{color:color},
+bgcolor:'rgba(255,255,255,0.05)',
+borderwidth:1,bordercolor:'rgba(212,175,55,0.3)',
+steps:[{range:[0,40],color:'rgba(255,69,58,0.1)'},{range:[40,70],color:'rgba(212,175,55,0.1)'},{range:[70,100],color:'rgba(48,209,88,0.1)'}]},
+number:{font:{color:color,size:28}}
+}],{margin:{l:20,r:20,t:0,b:0}});
+});
+
+// Shapley waterfall
+plot('t4-shapley',[
+{type:'waterfall',x:['基期GMV','流量效应','转化效应','客单效应','本期GMV'],
+y:[GMV0/10000,trafficEffect/10000,convEffect/10000,priceEffect/10000,GMV1/10000],
+measure:['absolute','relative','relative','relative','total'],
+decreasing:{marker:{color:'#FF453A'}},
+increasing:{marker:{color:'#30D158'}},
+totals:{marker:{color:'rgba(212,175,55,0.6)'}},
+connector:{line:{color:'rgba(255,255,255,0.2)'}},
+textposition:'outside',texttemplate:'%{y:.1f}',textfont:{size:10}
+}
+],{yaxis:{title:{text:'GMV(万元)',font:{size:10}}}});
+
+// Traffic health
+const chVis=groupSalesByDim(sRows,'channel').map(([n,rs])=>[n,aggSales(rs).visitors]).sort((a,b)=>b[1]-a[1]);
+plot('t4-traffic',[
+{x:chVis.map(d=>d[1]),y:chVis.map(d=>d[0]),type:'bar',orientation:'h',marker:{color:COLORS[0]},text:chVis.map(d=>fmt(d[1],'num')),textposition:'outside',textfont:{size:9}}
+],{margin:{l:60,r:60,t:10,b:30},yaxis:{autorange:'reversed'}});
+
+// Product analysis
+const mdlProfit=groupSalesByDim(sRows,'model').map(([n,rs])=>{const a=aggSales(rs);return{n,amt:a.amount,items:a.items,ap:a.buyers>0?a.amount/a.buyers:0}}).sort((a,b)=>b.amt-a.amt);
+const top5=mdlProfit.slice(0,5),bot5=mdlProfit.slice(-5).reverse();
+plot('t4-product',[
+{x:top5.map(d=>d.n),y:top5.map(d=>d.amt/10000),type:'bar',name:'Top5',marker:{color:'rgba(48,209,88,0.6)'}},
+{x:bot5.map(d=>d.n),y:bot5.map(d=>d.amt/10000),type:'bar',name:'Bottom5',marker:{color:'rgba(255,69,58,0.6)'}}
+],{margin:{b:60},xaxis:{tickangle:-45,tickfont:{size:8}}});
+
+// Channel efficiency
+const pRows=getPromoRows(S.filters);
+const chEff=groupPromoByDim(pRows,'channel').map(([n,rs])=>{const a=aggPromo(rs);const sA=aggSales(getSalesRows({...S.filters}).filter(r=>r[SC.ch]===D.meta.channels.indexOf(n)));return{n,cost:a.cost,roi:a.cost>0?a.totalAmount/a.cost:0,feeRate:sA.amount>0?a.cost/sA.amount*100:0}}).filter(d=>d.cost>0);
+plot('t4-channel',[
+{x:chEff.map(d=>d.roi),y:chEff.map(d=>d.n),type:'bar',orientation:'h',marker:{color:COLORS[1]},text:chEff.map(d=>d.roi.toFixed(1)),textposition:'outside',textfont:{size:9}}
+],{margin:{l:60,r:40,t:10,b:30},yaxis:{autorange:'reversed'}});
+
+// Action checklist
+const actions=[];
+const gmvYoY=chgPct(curr.amount,yoy.amount);
+const gmvMoM=chgPct(curr.amount,mom.amount);
+if(gmvYoY<0)actions.push({p:'P0',t:`GMV同比下降${Math.abs(gmvYoY).toFixed(1)}%，需紧急排查原因并制定增长方案`});
+if(gmvMoM<0)actions.push({p:'P0',t:`GMV环比下降${Math.abs(gmvMoM).toFixed(1)}%，关注近期运营变化`});
+if(curr.convRate<2)actions.push({p:'P0',t:`转化率仅${curr.convRate.toFixed(1)}%，低于行业基准(3%)，需优化详情页和价格策略`});
+if(curr.roi<1&&curr.cost>0)actions.push({p:'P0',t:`ROI为${curr.roi.toFixed(2)}，推广投入产出比为负，建议暂停低效推广计划`});
+if(curr.refundRate>5)actions.push({p:'P1',t:`退款率${curr.refundRate.toFixed(1)}%偏高，需检查产品质量和售后服务`});
+if(curr.ctr<1&&curr.cost>0)actions.push({p:'P1',t:`点击率仅${curr.ctr.toFixed(1)}%，需优化推广素材和关键词`});
+if(chgPct(curr.visitors,yoy.visitors)<0)actions.push({p:'P1',t:`访客数同比下降${Math.abs(chgPct(curr.visitors,yoy.visitors)).toFixed(1)}%，需加大引流力度`});
+if(curr.feeRate>20)actions.push({p:'P2',t:`费率${curr.feeRate.toFixed(1)}%偏高，建议优化推广结构降低成本`});
+if(actions.length===0)actions.push({p:'P2',t:'各项指标健康，继续保持当前运营策略'});
+document.getElementById('t4-actions').innerHTML=actions.map(a=>
+`<div class="action-item action-${a.p.toLowerCase()}"><span class="action-tag tag-${a.p.toLowerCase()}">${a.p}</span><span class="action-text">${a.t}</span></div>`
+).join('');
+}
+
+// ==================== TAB 5: 透视表分析 ====================
+function renderTab5(){
+let html=section('销售透视表',`
+<div class="sel-row">
+<label>行维度:</label><select id="t5-sRow" onchange="S.tab5.sRow=this.value;renderTab5Sales()">
+<option value="store">店铺</option><option value="channel">渠道</option><option value="category">品类</option><option value="model">型号</option><option value="date">日期</option><option value="month">年月</option></select>
+<label>指标:</label><select id="t5-sMetric" onchange="S.tab5.sMetric=this.value;renderTab5Sales()">
+<option value="amount">支付金额</option><option value="items">支付件数</option><option value="buyers">买家数</option><option value="visitors">访客数</option><option value="convRate">转化率</option><option value="avgPrice">客单价</option><option value="addCartRate">加购率</option></select>
+<label>TopN:</label><select id="t5-topN" onchange="S.tab5.topN=parseInt(this.value);renderTab5Sales()">
+<option value="10">10</option><option value="15" selected>15</option><option value="20">20</option><option value="0">全部</option></select>
+</div>
+<div class="table-wrap" id="t5-sales-table"></div>`);
+
+html+=section('推广透视表',`
+<div class="sel-row">
+<label>行维度:</label><select id="t5-pRow" onchange="S.tab5.pRow=this.value;renderTab5Promo()">
+<option value="store">店铺</option><option value="channel">渠道</option><option value="category">品类</option><option value="model">型号</option><option value="marketingScene">营销场景</option><option value="date">日期</option><option value="month">年月</option></select>
+<label>指标:</label><select id="t5-pMetric" onchange="S.tab5.pMetric=this.value;renderTab5Promo()">
+<option value="cost">花费</option><option value="impressions">展现</option><option value="clicks">点击</option><option value="ctr">点击率</option><option value="cpc">CPC</option><option value="roi">ROI</option><option value="totalAmount">成交金额</option><option value="directAmount">直接成交</option></select>
+</div>
+<div class="table-wrap" id="t5-promo-table"></div>`);
+
+document.getElementById('tab5').innerHTML=html;
+// Set selected values
+setTimeout(()=>{
+const sr=document.getElementById('t5-sRow');if(sr)sr.value=S.tab5.sRow;
+const sm=document.getElementById('t5-sMetric');if(sm)sm.value=S.tab5.sMetric;
+const tn=document.getElementById('t5-topN');if(tn)tn.value=S.tab5.topN;
+const pr=document.getElementById('t5-pRow');if(pr)pr.value=S.tab5.pRow;
+const pm=document.getElementById('t5-pMetric');if(pm)pm.value=S.tab5.pMetric;
+renderTab5Sales();renderTab5Promo();
+},0);
+}
+
+function renderTab5Sales(){
+if(!document.getElementById('t5-sales-table'))return;
+const dim=S.tab5.sRow,metric=S.tab5.topN;
+const sRows=getSalesRows(S.filters);
+let grouped;
+if(dim==='date')grouped=groupSalesByDate(sRows,'day');
+else if(dim==='month')grouped=groupSalesByDate(sRows,'month');
+else grouped=groupSalesByDim(sRows,dim);
+
+const data=grouped.map(([k,rs])=>{
+const a=aggSales(rs);
+return{
+key:k,
+amount:a.amount,items:a.items,buyers:a.buyers,visitors:a.visitors,
+convRate:a.visitors>0?a.buyers/a.visitors*100:0,
+avgPrice:a.buyers>0?a.amount/a.buyers:0,
+addCartRate:a.visitors>0?a.addCart/a.visitors*100:0,
+views:a.views,addCart:a.addCart,refund:a.refund
+};
+});
+const metricMap={amount:'支付金额(万)',items:'支付件数',buyers:'买家数',visitors:'访客数',convRate:'转化率(%)',avgPrice:'客单价(元)',addCartRate:'加购率(%)',views:'浏览量',addCart:'加购数',refund:'退款额'};
+const fmtMap={amount:'wan',items:'num',buyers:'num',visitors:'num',convRate:'pct',avgPrice:'money',addCartRate:'pct'};
+data.sort((a,b)=>b[S.tab5.sMetric]-a[S.tab5.sMetric]);
+const topN=S.tab5.topN>0?Math.min(S.tab5.topN,data.length):data.length;
+const showData=data.slice(0,topN);
+const total=data.reduce((acc,d)=>{for(const k in acc)if(typeof acc[k]==='number')acc[k]+=d[k]||0;return acc},{amount:0,items:0,buyers:0,visitors:0,views:0,addCart:0,refund:0});
+total.convRate=total.visitors>0?total.buyers/total.visitors*100:0;
+total.avgPrice=total.buyers>0?total.amount/total.buyers:0;
+total.addCartRate=total.visitors>0?total.addCart/total.visitors*100:0;
+const rows=showData.map(d=>[d.key,fmt(d[S.tab5.sMetric],fmtMap[S.tab5.sMetric]||'num'),fmt(d.amount,'wan'),fmt(d.visitors,'num'),fmt(d.convRate,'pct')+'%',fmt(d.avgPrice,'money')+'元',fmt(d.addCartRate,'pct')+'%']);
+rows.push({_total:true,0:'合计',1:fmt(total[S.tab5.sMetric],fmtMap[S.tab5.sMetric]||'num'),2:fmt(total.amount,'wan'),3:fmt(total.visitors,'num'),4:fmt(total.convRate,'pct')+'%',5:fmt(total.avgPrice,'money')+'元',6:fmt(total.addCartRate,'pct')+'%'});
+document.getElementById('t5-sales-table').innerHTML=tableHTML(
+[{text:dim==='date'?'日期':dim==='month'?'月份':dim==='channel'?'渠道':dim==='store'?'店铺':dim==='category'?'品类':'型号'},
+{text:metricMap[S.tab5.sMetric]||S.tab5.sMetric,align:'right'},
+{text:'支付金额(万)',align:'right'},{text:'访客数',align:'right'},{text:'转化率',align:'right'},{text:'客单价',align:'right'},{text:'加购率',align:'right'}],
+rows
+);
+}
+
+function renderTab5Promo(){
+if(!document.getElementById('t5-promo-table'))return;
+const dim=S.tab5.pRow;
+const pRows=getPromoRows(S.filters);
+let grouped;
+if(dim==='date')grouped=groupPromoByDate(pRows,'day');
+else if(dim==='month')grouped=groupPromoByDate(pRows,'month');
+else grouped=groupPromoByDim(pRows,dim);
+
+const data=grouped.map(([k,rs])=>{
+const a=aggPromo(rs);
+return{
+key:k,cost:a.cost,impressions:a.impressions,clicks:a.clicks,
+totalAmount:a.totalAmount,directAmount:a.directAmount,
+ctr:a.impressions>0?a.clicks/a.impressions*100:0,
+cpc:a.clicks>0?a.cost/a.clicks:0,
+roi:a.cost>0?a.totalAmount/a.cost:0,
+totalCart:a.totalCart,totalOrders:a.totalOrders
+};
+});
+const metricMap={cost:'花费(元)',impressions:'展现量',clicks:'点击量',ctr:'点击率(%)',cpc:'CPC(元)',roi:'ROI',totalAmount:'成交金额(元)',directAmount:'直接成交(元)',totalCart:'加购数',totalOrders:'订单数'};
+const fmtMap={cost:'money',impressions:'num',clicks:'num',ctr:'pct',cpc:'dec',roi:'dec',totalAmount:'money',directAmount:'money',totalCart:'num',totalOrders:'num'};
+data.sort((a,b)=>b[S.tab5.pMetric]-a[S.tab5.pMetric]);
+const topN=15;
+const showData=data.slice(0,topN);
+const total=data.reduce((acc,d)=>{for(const k in acc)if(typeof acc[k]==='number')acc[k]+=d[k]||0;return acc},{cost:0,impressions:0,clicks:0,totalAmount:0,directAmount:0,totalCart:0,totalOrders:0});
+total.ctr=total.impressions>0?total.clicks/total.impressions*100:0;
+total.cpc=total.clicks>0?total.cost/total.clicks:0;
+total.roi=total.cost>0?total.totalAmount/total.cost:0;
+const rows=showData.map(d=>[d.key,fmt(d[S.tab5.pMetric],fmtMap[S.tab5.pMetric]||'num'),fmt(d.cost,'money'),fmt(d.clicks,'num'),fmt(d.ctr,'pct')+'%',fmt(d.cpc,'dec'),fmt(d.roi,'dec'),fmt(d.totalAmount,'money')]);
+rows.push({_total:true,0:'合计',1:fmt(total[S.tab5.pMetric],fmtMap[S.tab5.pMetric]||'num'),2:fmt(total.cost,'money'),3:fmt(total.clicks,'num'),4:fmt(total.ctr,'pct')+'%',5:fmt(total.cpc,'dec'),6:fmt(total.roi,'dec'),7:fmt(total.totalAmount,'money')});
+document.getElementById('t5-promo-table').innerHTML=tableHTML(
+[{text:dim==='date'?'日期':dim==='month'?'月份':dim==='channel'?'渠道':dim==='store'?'店铺':dim==='category'?'品类':dim==='model'?'型号':'营销场景'},
+{text:metricMap[S.tab5.pMetric]||S.tab5.pMetric,align:'right'},
+{text:'花费',align:'right'},{text:'点击',align:'right'},{text:'点击率',align:'right'},{text:'CPC',align:'right'},{text:'ROI',align:'right'},{text:'成交金额',align:'right'}],
+rows
+);
+}
+
+// ==================== TAB 6: 目标达成 ====================
+function parseTargets(){
+D.targetsParsed={};
+for(const r of D.targets.rows){
+const[month,store,model,indicator,value]=r;
+if(!VALID_IND.has(indicator))continue;
+if(!D.targetsParsed[month])D.targetsParsed[month]={};
+if(!D.targetsParsed[month][store])D.targetsParsed[month][store]={};
+if(!D.targetsParsed[month][store][model])D.targetsParsed[month][store][model]={};
+D.targetsParsed[month][store][model][indicator]=value;
+}
+}
+function renderTab6(){
+const month='2026-07';
+const tData=D.targetsParsed[month]||{};
+
+// Aggregate by store
+const storeAgg={};
+for(const store in tData){
+storeAgg[store]={成交金额目标:0,实际成交金额:0,支付件数目标:0,实际支付件数:0,目标费率:0,实际费率:0,推广花费:0,目标投入金额:0,实际推广花费:0};
+for(const model in tData[store]){
+const ind=tData[store][model];
+for(const k in storeAgg[store]){
+if(ind[k]!=null){
+if(k==='目标费率'||k==='实际费率')storeAgg[store][k]+=ind[k];
+else storeAgg[store][k]+=ind[k];
+}
+}
+}
+const cnt=Object.keys(tData[store]).length||1;
+storeAgg[store]['目标费率']/=cnt;
+storeAgg[store]['实际费率']/=cnt;
+}
+
+// Overall KPIs
+let totAmtT=0,totAmtA=0,totItmT=0,totItmA=0,totCostT=0,totCostA=0;
+for(const s in storeAgg){
+totAmtT+=storeAgg[s]['成交金额目标']||0;
+totAmtA+=storeAgg[s]['实际成交金额']||0;
+totItmT+=storeAgg[s]['支付件数目标']||0;
+totItmA+=storeAgg[s]['实际支付件数']||0;
+totCostT+=storeAgg[s]['目标投入金额']||0;
+totCostA+=storeAgg[s]['实际推广花费']||0;
+}
+
+let html=section('月度指标卡片',`<div class="kpi-row" style="grid-template-columns:repeat(4,1fr)">
+${kpiCard('成交金额达成率',fmt(totAmtT>0?totAmtA/totAmtT*100:0,'pct')+'%','',null,null)}
+${kpiCard('支付件数达成率',fmt(totItmT>0?totItmA/totItmT*100:0,'pct')+'%','',null,null)}
+${kpiCard('目标金额',fmt(totAmtT,'money'),'元',null,null)}
+${kpiCard('实际金额',fmt(totAmtA,'money'),'元',null,null)}
+</div>
+<div class="kpi-row" style="grid-template-columns:repeat(4,1fr)">
+${kpiCard('目标投入',fmt(totCostT,'money'),'元',null,null)}
+${kpiCard('实际推广花费',fmt(totCostA,'money'),'元',null,null)}
+${kpiCard('目标费率',fmt(totAmtT>0?totCostT/totAmtT*100:0,'pct')+'%','',null,null)}
+${kpiCard('实际费率',fmt(totAmtA>0?totCostA/totAmtA*100:0,'pct')+'%','',null,null)}
+</div>`);
+
+// Store target table
+const storeRows=Object.entries(storeAgg).map(([s,d])=>{
+const amtRate=d['成交金额目标']>0?d['实际成交金额']/d['成交金额目标']*100:0;
+const itmRate=d['支付件数目标']>0?d['实际支付件数']/d['支付件数目标']*100:0;
+return{store:s,...d,amtRate,itmRate};
+}).sort((a,b)=>b.amtRate-a.amtRate);
+
+html+=section('店铺目标达成',`<div class="table-wrap"><table class="data-table"><thead><tr>
+<th>店铺</th><th>目标金额</th><th>实际金额</th><th>达成率</th><th>进度</th><th>目标件数</th><th>实际件数</th><th>件数达成率</th><th>目标费率</th><th>实际费率</th><th>推广花费</th>
+</tr></thead><tbody>
+${storeRows.map(r=>{
+const barColor=r.amtRate>=100?'#30D158':r.amtRate>=60?'#D4AF37':'#FF453A';
+return`<tr>
+<td>${r.store}</td>
+<td>${fmt(r['成交金额目标'],'money')}</td>
+<td>${fmt(r['实际成交金额'],'money')}</td>
+<td style="color:${barColor}">${r.amtRate.toFixed(1)}%</td>
+<td><div class="prog-bar"><div class="prog-fill" style="width:${Math.min(r.amtRate,100)}%;background:${barColor}"></div></div></td>
+<td>${fmt(r['支付件数目标'],'num')}</td>
+<td>${fmt(r['实际支付件数'],'num')}</td>
+<td style="color:${r.itmRate>=100?'#30D158':r.itmRate>=60?'#D4AF37':'#FF453A'}">${r.itmRate.toFixed(1)}%</td>
+<td>${fmt(r['目标费率'],'pct')}%</td>
+<td>${fmt(r['实际费率'],'pct')}%</td>
+<td>${fmt(r['实际推广花费'],'money')}</td>
+</tr>`;
+}).join('')}
+</tbody></table></div>`);
+
+// Model target table (grouped by store)
+html+=section('单品目标达成(按店铺分组)',`<div class="table-wrap" style="max-height:500px"><table class="data-table"><thead><tr>
+<th>店铺</th><th>型号</th><th>目标金额</th><th>实际金额</th><th>达成率</th><th>目标件数</th><th>实际件数</th><th>件数达成率</th><th>推广花费</th>
+</tr></thead><tbody>`);
+for(const store in tData){
+const models=Object.entries(tData[store]).map(([m,ind])=>{
+const amtT=ind['成交金额目标']||0;
+const amtA=ind['实际成交金额']||0;
+const itmT=ind['支付件数目标']||0;
+const itmA=ind['实际支付件数']||0;
+const cost=ind['实际推广花费']||0;
+const amtRate=amtT>0?amtA/amtT*100:0;
+const itmRate=itmT>0?itmA/itmT*100:0;
+return{m,amtT,amtA,itmT,itmA,cost,amtRate,itmRate};
+}).sort((a,b)=>b.amtT-a.amtT);
+for(const d of models){
+html+=`<tr>
+<td>${store}</td><td>${d.m}</td>
+<td>${fmt(d.amtT,'money')}</td><td>${fmt(d.amtA,'money')}</td>
+<td style="color:${d.amtRate>=100?'#30D158':d.amtRate>=60?'#D4AF37':'#FF453A'}">${d.amtRate.toFixed(1)}%</td>
+<td>${fmt(d.itmT,'num')}</td><td>${fmt(d.itmA,'num')}</td>
+<td style="color:${d.itmRate>=100?'#30D158':d.itmRate>=60?'#D4AF37':'#FF453A'}">${d.itmRate.toFixed(1)}%</td>
+<td>${fmt(d.cost,'money')}</td>
+</tr>`;
+}
+}
+html+=`</tbody></table></div>`;
+document.getElementById('tab6').innerHTML=html;
+}
+
+// ==================== INIT ====================
+async function init(){
+try{
+await loadData();
+parseTargets();
+initFilters();
+renderTab0();
+document.getElementById('loading').classList.add('hidden');
+document.getElementById('app').style.display='block';
+}catch(e){
+document.getElementById('loading').innerHTML=`<div style="color:#FF453A;font-size:14px">数据加载失败: ${e.message}<br><span style="font-size:12px;color:var(--txt3)">请确保通过HTTP服务器访问此页面(如: python3 -m http.server)</span></div>`;
+console.error(e);
+}
+}
+window.addEventListener('DOMContentLoaded',init);
+window.addEventListener('resize',()=>{if(D)renderTab(S.activeTab)});
+</script>
+</body>
+</html>
