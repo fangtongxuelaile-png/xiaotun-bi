@@ -6,8 +6,8 @@
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>小豚当家销售经营BI看板 V1.4</title>
-<script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js" onload="window.__PLOTLY_READY__=true"></script>
+<title>小豚当家销售经营BI看板 V1.5</title>
+<script defer src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js" onload="window.__PLOTLY_READY__=true"></script>
 <script>/* SheetJS 按需加载：点击导入时动态插入 */</script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -187,7 +187,7 @@ body{background:var(--bg);color:var(--txt);font-family:-apple-system,system-ui,'
 </div>
 <button class="login-btn" id="loginBtn" onclick="doLogin()">登 录</button>
 <div class="login-error" id="loginError"></div>
-<div class="login-hint">V1.4 · AES-256-GCM 加密保护</div>
+<div class="login-hint">V1.5 · AES-256-GCM 加密保护</div>
 </div>
 </div>
 <div class="loading hidden" id="loading">
@@ -204,7 +204,7 @@ body{background:var(--bg);color:var(--txt);font-family:-apple-system,system-ui,'
 <div class="logo-icon">豚</div>
 <div>
 <div class="app-title">小豚当家销售经营BI看板</div>
-<div class="app-sub">V1.4 · 数据周期: <span id="dataRange"></span> · <span id="userBadge" style="color:var(--gold);font-weight:600"></span></div>
+<div class="app-sub">V1.5 · 数据周期: <span id="dataRange"></span> · <span id="userBadge" style="color:var(--gold);font-weight:600"></span></div>
 </div>
 </header>
 <div class="app-wrap">
@@ -1732,17 +1732,21 @@ loadData();
 parseTargets();
 initFilters();
 setLoadingText('渲染首屏...', 90);
-await renderTab0();
 document.getElementById('loading').classList.add('hidden');
 document.getElementById('app').style.display='block';
+await renderTab0();
+if(window.Plotly&&document.getElementById('t0-trend')){
+Plotly.Plots.resize('t0-trend');Plotly.Plots.resize('t0-conv');Plotly.Plots.resize('t0-channel');Plotly.Plots.resize('t0-store');Plotly.Plots.resize('t0-cat');Plotly.Plots.resize('t0-model');
+}
 updateDataInfo();
 applyRole();
 }catch(e){
+console.error('登录失败:',e);
 document.getElementById('loading').classList.add('hidden');
 var lo=document.getElementById('loginOverlay');
 lo.classList.remove('fade-out');
 lo.style.display='flex';
-errEl.textContent=e.message||'登录失败';
+errEl.textContent=(e.message||'登录失败')+(e.stack?'\n('+e.stack.split('\n')[1]?.trim()+')':'');
 btn.disabled=false;
 btn.textContent='登 录';
 }
