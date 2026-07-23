@@ -190,7 +190,7 @@ body{background:var(--bg);color:var(--txt);font-family:-apple-system,system-ui,'
 <div class="login-hint">V1.4 · AES-256-GCM 加密保护</div>
 </div>
 </div>
-<div class="loading" id="loading">
+<div class="loading hidden" id="loading">
 <div class="spinner"></div>
 <div id="loadingText" style="color:var(--gold);font-size:14px">正在加载数据...</div>
 <div id="loadingProgress" style="width:200px;height:4px;background:rgba(255,255,255,0.08);border-radius:2px;margin-top:8px;overflow:hidden">
@@ -1666,7 +1666,6 @@ input.value='';
 }).catch(function(e){setSbStatus('promoStatus','加载解析库失败: '+(e.message||e),false);input.value='';});
 }
 
-async function init(){
 // ==================== ROLE-BASED ACCESS CONTROL ====================
 function applyRole(){
 var isAdmin=(_XTB_ROLE==='admin');
@@ -1706,7 +1705,6 @@ if(savedUser&&_XTB_USERS.indexOf(savedUser)>=0){
 showLoginError('请重新登录');
 }
 // 等待用户登录
-}
 
 async function doLogin(){
 var user=document.getElementById('loginUser').value.trim();
@@ -1716,6 +1714,7 @@ var btn=document.getElementById('loginBtn');
 errEl.textContent='';
 btn.disabled=true;
 btn.textContent='解密中...';
+document.getElementById('loading').classList.remove('hidden');
 try{
 if(_XTB_USERS.indexOf(user)<0) throw new Error('账号不存在');
 _XTB_ROLE=_XTB_ROLES[user]||'viewer';
@@ -1739,8 +1738,10 @@ document.getElementById('app').style.display='block';
 updateDataInfo();
 applyRole();
 }catch(e){
-setLoadingText('加载失败', 0);
-showLoadingError((e.message||'登录失败')+'\n请刷新页面重试，或检查账号密码');
+document.getElementById('loading').classList.add('hidden');
+var lo=document.getElementById('loginOverlay');
+lo.classList.remove('fade-out');
+lo.style.display='flex';
 errEl.textContent=e.message||'登录失败';
 btn.disabled=false;
 btn.textContent='登 录';
